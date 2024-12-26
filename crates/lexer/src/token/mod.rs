@@ -1,19 +1,28 @@
+use token_literal::TokenLiteral;
 use token_type::TokenType;
 
+pub mod token_literal;
 pub mod token_type;
 
 pub struct Token {
     token_type: TokenType,
     lexeme: String,
-    line: u32,
+    line: usize,
+    literal: Option<TokenLiteral>,
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, lexeme: String, line: u32) -> Self {
+    pub fn new(
+        token_type: TokenType,
+        lexeme: String,
+        line: usize,
+        literal: Option<TokenLiteral>,
+    ) -> Self {
         Self {
             lexeme,
             line,
             token_type,
+            literal,
         }
     }
 
@@ -25,7 +34,11 @@ impl Token {
         &self.lexeme
     }
 
-    pub fn line(&self) -> u32 {
+    pub fn line(&self) -> usize {
         self.line
+    }
+
+    pub fn literal(&self) -> Option<&TokenLiteral> {
+        self.literal.as_ref()
     }
 }
