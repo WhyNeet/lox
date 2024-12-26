@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum TokenLiteral {
     String(String),
     Number(f64),
