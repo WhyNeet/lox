@@ -4,7 +4,10 @@ use std::cell::RefCell;
 
 use keywords::KEYWORDS;
 
-use crate::token::{token_literal::TokenLiteral, token_type::TokenType, Token};
+use crate::{
+    error::{ScannerError, ScannerErrorType, ScannerResult},
+    token::{token_literal::TokenLiteral, token_type::TokenType, Token},
+};
 
 pub struct Scanner {
     source: String,
@@ -25,18 +28,20 @@ impl Scanner {
         }
     }
 
-    pub fn scan_tokens(&self) {
+    pub fn scan_tokens(&self) -> ScannerResult<()> {
         while !self.is_at_end() {
             *self.start.borrow_mut() = self.current();
-            self.scan_token();
+            self.scan_token()?;
         }
 
         self.tokens
             .borrow_mut()
-            .push(Token::new(TokenType::EOF, String::new(), 0, None));
+            .push(Token::new(TokenType::EOF, String::new(), self.line(), None));
+
+        Ok(())
     }
 
-    fn scan_token(&self) {
+    fn scan_token(&self) -> ScannerResult<()> {
         let c = self.advance();
 
         match c {
@@ -86,9 +91,8 @@ impl Scanner {
                     }
 
                     if self.is_at_end() {
-                        panic!(
-                            "error [line {}]:\n\tunterminated block-style comment",
-                            self.line()
+                        return Err(
+                            self.construct_error(ScannerErrorType::UnterminatedBlockComment)
                         );
                     } else {
                         // Consume "*/"
@@ -100,20 +104,19 @@ impl Scanner {
             }
             ' ' | '\r' | '\t' => {}
             '\n' => self.advance_lines(),
-            '"' => self.string(),
+            '"' => self.string()?,
             other => {
                 if other.is_ascii_digit() {
                     self.number();
                 } else if other.is_ascii_alphabetic() {
                     self.identifier();
                 } else {
-                    panic!(
-                        "error [line {}]:\n\tunexpected character: {other}",
-                        self.line()
-                    )
+                    return Err(self.construct_error(ScannerErrorType::UnexpectedCharacter(other)));
                 }
             }
         };
+
+        Ok(())
     }
 
     fn identifier(&self) {
@@ -147,7 +150,7 @@ impl Scanner {
         self.add_literal_token(TokenType::Number, Some(TokenLiteral::Number(value)));
     }
 
-    fn string(&self) {
+    fn string(&self) -> ScannerResult<()> {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
                 self.advance_lines();
@@ -156,7 +159,7 @@ impl Scanner {
         }
 
         if self.is_at_end() {
-            panic!("error [line {}]:\n\tunterminated string", self.line());
+            return Err(self.construct_error(ScannerErrorType::UnterminatedString));
         }
 
         // Consume closing '"'
@@ -164,6 +167,8 @@ impl Scanner {
 
         let value = self.source[(self.start() + 1)..(self.current() - 1)].to_string();
         self.add_literal_token(TokenType::String, Some(TokenLiteral::String(value)));
+
+        Ok(())
     }
 
     fn peek_next(&self) -> char {
@@ -243,5 +248,9 @@ impl Scanner {
 impl Scanner {
     pub fn tokens(self) -> Vec<Token> {
         self.tokens.take()
+    }
+
+    fn construct_error(&self, error: ScannerErrorType) -> ScannerError {
+        ScannerError::new(error, Some(self.line()))
     }
 }
