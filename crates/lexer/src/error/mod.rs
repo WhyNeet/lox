@@ -1,5 +1,6 @@
 use std::fmt;
 
+use colored::Colorize;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -26,10 +27,12 @@ impl fmt::Display for ScannerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(
             f,
-            "error{}: {}",
+            "{}{}: {}",
+            "error".red(),
             self.line
                 .map(|line| format!("[:{line}]"))
-                .unwrap_or(String::new()),
+                .unwrap_or(String::new())
+                .red(),
             self.error
         )
     }
