@@ -4,7 +4,7 @@ use token_type::TokenType;
 pub mod token_literal;
 pub mod token_type;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Token {
     token_type: TokenType,
     lexeme: String,

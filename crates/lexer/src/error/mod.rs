@@ -1,10 +1,10 @@
 use std::fmt;
 
-use colored::Colorize;
+use error::InterpreterError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum ScannerErrorType {
+pub enum ScannerErrorKind {
     #[error("Unterminated block-style comment.")]
     UnterminatedBlockComment,
 
@@ -17,31 +17,27 @@ pub enum ScannerErrorType {
 
 #[derive(Debug)]
 pub struct ScannerError {
-    error: ScannerErrorType,
-    line: Option<usize>,
+    kind: ScannerErrorKind,
+    line: usize,
+}
+
+impl error::Error for ScannerError {
+    fn line(&self) -> Option<usize> {
+        Some(self.line)
+    }
 }
 
 impl std::error::Error for ScannerError {}
-
 impl fmt::Display for ScannerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(
-            f,
-            "{}{}: {}",
-            "error".red(),
-            self.line
-                .map(|line| format!("[:{line}]"))
-                .unwrap_or(String::new())
-                .red(),
-            self.error
-        )
+        write!(f, "{}", self.kind)
     }
 }
 
 impl ScannerError {
-    pub fn new(error: ScannerErrorType, line: Option<usize>) -> Self {
-        Self { error, line }
+    pub fn new(kind: ScannerErrorKind, line: usize) -> Self {
+        Self { kind, line }
     }
 }
 
-pub type ScannerResult<T> = Result<T, ScannerError>;
+pub type ScannerResult<T> = Result<T, InterpreterError<ScannerError>>;

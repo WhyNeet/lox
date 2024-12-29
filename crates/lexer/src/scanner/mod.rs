@@ -2,10 +2,11 @@ pub mod keywords;
 
 use std::cell::RefCell;
 
+use error::InterpreterError;
 use keywords::KEYWORDS;
 
 use crate::{
-    error::{ScannerError, ScannerErrorType, ScannerResult},
+    error::{ScannerError, ScannerErrorKind, ScannerResult},
     token::{token_literal::TokenLiteral, token_type::TokenType, Token},
 };
 
@@ -92,7 +93,7 @@ impl Scanner {
 
                     if self.is_at_end() {
                         return Err(
-                            self.construct_error(ScannerErrorType::UnterminatedBlockComment)
+                            self.construct_error(ScannerErrorKind::UnterminatedBlockComment)
                         );
                     } else {
                         // Consume "*/"
@@ -111,7 +112,7 @@ impl Scanner {
                 } else if other.is_ascii_alphabetic() {
                     self.identifier();
                 } else {
-                    return Err(self.construct_error(ScannerErrorType::UnexpectedCharacter(other)));
+                    return Err(self.construct_error(ScannerErrorKind::UnexpectedCharacter(other)));
                 }
             }
         };
@@ -159,7 +160,7 @@ impl Scanner {
         }
 
         if self.is_at_end() {
-            return Err(self.construct_error(ScannerErrorType::UnterminatedString));
+            return Err(self.construct_error(ScannerErrorKind::UnterminatedString));
         }
 
         // Consume closing '"'
@@ -250,7 +251,7 @@ impl Scanner {
         self.tokens.take()
     }
 
-    fn construct_error(&self, error: ScannerErrorType) -> ScannerError {
-        ScannerError::new(error, Some(self.line()))
+    fn construct_error(&self, kind: ScannerErrorKind) -> InterpreterError<ScannerError> {
+        InterpreterError::new(ScannerError::new(kind, self.line()))
     }
 }
