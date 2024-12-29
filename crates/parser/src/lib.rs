@@ -51,6 +51,10 @@ impl Parser {
     }
 
     fn equality(&self) -> ParserResult<Expression> {
+        if self.check_many(&[TokenType::BangEqual, TokenType::EqualEqual]) {
+            return Err(self.construct_error(ParserErrorKind::MissingLeftHandOperand));
+        }
+
         let mut expr = self.comparison()?;
 
         while self.match_token(&[TokenType::BangEqual, TokenType::EqualEqual]) {
@@ -67,6 +71,15 @@ impl Parser {
     }
 
     fn comparison(&self) -> ParserResult<Expression> {
+        if self.check_many(&[
+            TokenType::Greater,
+            TokenType::GreaterEqual,
+            TokenType::Less,
+            TokenType::LessEqual,
+        ]) {
+            return Err(self.construct_error(ParserErrorKind::MissingLeftHandOperand));
+        }
+
         let mut expr = self.term()?;
 
         while self.match_token(&[
@@ -88,6 +101,10 @@ impl Parser {
     }
 
     fn term(&self) -> ParserResult<Expression> {
+        if self.check_many(&[TokenType::Plus, TokenType::Minus]) {
+            return Err(self.construct_error(ParserErrorKind::MissingLeftHandOperand));
+        }
+
         let mut expr = self.factor()?;
 
         while self.match_token(&[TokenType::Plus, TokenType::Minus]) {
@@ -104,6 +121,10 @@ impl Parser {
     }
 
     fn factor(&self) -> ParserResult<Expression> {
+        if self.check_many(&[TokenType::Slash, TokenType::Star]) {
+            return Err(self.construct_error(ParserErrorKind::MissingLeftHandOperand));
+        }
+
         let mut expr = self.unary()?;
 
         while self.match_token(&[TokenType::Slash, TokenType::Star]) {
@@ -212,6 +233,17 @@ impl Parser {
     fn check(&self, token_type: &TokenType) -> bool {
         self.peek()
             .map(|token| token.token_type() == token_type)
+            .unwrap_or(false)
+    }
+
+    fn check_many(&self, token_type: &[TokenType]) -> bool {
+        self.peek()
+            .map(|token| {
+                token_type
+                    .iter()
+                    .find(|&token_type| token.token_type() == token_type)
+                    .is_some()
+            })
             .unwrap_or(false)
     }
 

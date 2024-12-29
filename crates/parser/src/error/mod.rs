@@ -10,6 +10,9 @@ pub enum ParserErrorKind {
 
     #[error("Expected expression.")]
     ExpressionExprected,
+
+    #[error("Missing the left-hand expression operand.")]
+    MissingLeftHandOperand,
 }
 
 #[derive(Debug)]
