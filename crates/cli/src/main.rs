@@ -2,6 +2,7 @@ use std::{env, process};
 
 use lexer::scanner::Scanner;
 use parser::Parser;
+use runtime::Runtime;
 
 fn main() {
     let input = env::args().nth(1).unwrap();
@@ -14,13 +15,18 @@ fn main() {
 
     let tokens = scanner.tokens();
 
-    println!("tokens: {:?}", tokens);
-
     let parser = Parser::new(tokens);
     let tree = parser.run().unwrap_or_else(|err| {
         eprintln!("{err}");
         process::exit(1)
     });
 
-    println!("  -> {tree:?}");
+    println!("\n--- running ---\n");
+
+    let result = Runtime::new().evaluate(&tree).unwrap_or_else(|err| {
+        eprintln!("{err}");
+        process::exit(1);
+    });
+
+    println!("\n--- result ---\n\n{result:?}");
 }
