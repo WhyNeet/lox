@@ -152,7 +152,7 @@ impl Parser {
             return Ok(Expression::Grouping(Box::new(expr)));
         }
 
-        panic!()
+        Err(self.construct_error(ParserErrorKind::ExpressionExprected))
     }
 
     fn match_token(&self, tokens: &[TokenType]) -> bool {
@@ -164,6 +164,28 @@ impl Parser {
         }
 
         false
+    }
+
+    fn synchronize(&self) {
+        self.advance();
+
+        while !self.is_at_end() {
+            if *self.previous().unwrap().token_type() == TokenType::Semicolon {
+                break;
+            }
+
+            match self.advance().token_type() {
+                TokenType::Class
+                | TokenType::If
+                | TokenType::Var
+                | TokenType::While
+                | TokenType::Print
+                | TokenType::For
+                | TokenType::Return
+                | TokenType::Fun => break,
+                _ => (),
+            }
+        }
     }
 
     fn check(&self, token_type: &TokenType) -> bool {

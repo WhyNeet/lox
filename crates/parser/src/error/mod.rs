@@ -7,6 +7,9 @@ use thiserror::Error;
 pub enum ParserErrorKind {
     #[error("Expected `{0}`.")]
     TokenExpected(char),
+
+    #[error("Expected expression.")]
+    ExpressionExprected,
 }
 
 #[derive(Debug)]
