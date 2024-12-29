@@ -55,7 +55,9 @@ impl Scanner {
             '-' => self.add_token(TokenType::Minus),
             '+' => self.add_token(TokenType::Plus),
             ';' => self.add_token(TokenType::Semicolon),
+            ':' => self.add_token(TokenType::Colon),
             '*' => self.add_token(TokenType::Star),
+            '?' => self.add_token(TokenType::Question),
             '!' => self.add_token(if self.match_char('=') {
                 TokenType::BangEqual
             } else {
@@ -76,6 +78,7 @@ impl Scanner {
             } else {
                 TokenType::Less
             }),
+
             '/' => {
                 if self.match_char('/') {
                     // Skip comment
