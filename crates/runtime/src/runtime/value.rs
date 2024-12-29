@@ -143,6 +143,12 @@ impl Add for &RuntimeValue {
                 RuntimeValue::Float(rhs) => Some(RuntimeValue::Float(lhs + rhs)),
                 _ => None,
             },
+            RuntimeValue::String(lhs) => match rhs {
+                RuntimeValue::String(rhs) => Some(RuntimeValue::String(format!("{lhs}{rhs}"))),
+                RuntimeValue::Integer(rhs) => Some(RuntimeValue::String(format!("{lhs}{rhs}"))),
+                RuntimeValue::Float(rhs) => Some(RuntimeValue::String(format!("{lhs}{rhs}"))),
+                _ => None,
+            },
             _ => None,
         }
     }
