@@ -79,7 +79,15 @@ impl Runtime {
             Operator::Addition => &left + &right,
             Operator::Subtraction => &left - &right,
             Operator::Multiplication => &left * &right,
-            Operator::Division => &left / &right,
+            Operator::Division => {
+                if right == RuntimeValue::integer(0) || right == RuntimeValue::float(0.) {
+                    return Err(InterpreterError::new(RuntimeError::new(
+                        RuntimeErrorKind::ZeroDivision,
+                    )));
+                } else {
+                    &left / &right
+                }
+            }
             Operator::Greater => Some(RuntimeValue::boolean(
                 left.partial_cmp(&right)
                     .map(|ord| ord.is_gt())

@@ -200,7 +200,15 @@ impl Div for &RuntimeValue {
     fn div(self, rhs: Self) -> Self::Output {
         match self {
             RuntimeValue::Integer(lhs) => match rhs {
-                RuntimeValue::Integer(rhs) => Some(RuntimeValue::Integer(lhs / rhs)),
+                RuntimeValue::Integer(rhs) => {
+                    let result = *lhs as f64 / *rhs as f64;
+
+                    Some(if result.fract() == 0.0 {
+                        RuntimeValue::Integer(result as i64)
+                    } else {
+                        RuntimeValue::Float(result)
+                    })
+                }
                 RuntimeValue::Float(rhs) => Some(RuntimeValue::Float(*lhs as f64 / rhs)),
                 _ => None,
             },

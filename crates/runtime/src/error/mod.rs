@@ -7,6 +7,9 @@ use thiserror::Error;
 pub enum RuntimeErrorKind {
     #[error("Operand must be a number.")]
     ExpectedNumberOperand,
+
+    #[error("Attempted to divide by zero.")]
+    ZeroDivision,
 }
 
 #[derive(Debug)]
