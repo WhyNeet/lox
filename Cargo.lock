@@ -5,6 +5,9 @@ version = 4
 [[package]]
 name = "ast"
 version = "0.1.0"
+dependencies = [
+ "lexer",
+]
 
 [[package]]
 name = "cli"
@@ -21,6 +24,13 @@ checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
  "windows-sys",
+]
+
+[[package]]
+name = "error"
+version = "0.1.0"
+dependencies = [
+ "colored",
 ]
 
 [[package]]
@@ -41,6 +51,7 @@ dependencies = [
 name = "parser"
 version = "0.1.0"
 dependencies = [
+ "ast",
  "lexer",
 ]
 
