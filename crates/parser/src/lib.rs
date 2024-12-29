@@ -26,7 +26,28 @@ impl Parser {
     }
 
     fn expression(&self) -> ParserResult<Expression> {
-        self.equality()
+        self.ternary()
+    }
+
+    fn ternary(&self) -> ParserResult<Expression> {
+        let mut expr = self.equality()?;
+
+        if self.match_token(&[TokenType::Question]) {
+            let then = self.equality()?;
+            if !self.match_token(&[TokenType::Colon]) {
+                return Err(self.construct_error(ParserErrorKind::TokenExpected(':')));
+            }
+
+            let alternative = self.equality()?;
+
+            expr = Expression::Conditional {
+                condition: Box::new(expr),
+                then: Box::new(then),
+                alternative: Box::new(alternative),
+            };
+        }
+
+        Ok(expr)
     }
 
     fn equality(&self) -> ParserResult<Expression> {
