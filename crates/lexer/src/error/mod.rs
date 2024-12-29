@@ -25,6 +25,9 @@ impl error::Error for ScannerError {
     fn line(&self) -> Option<usize> {
         Some(self.line)
     }
+    fn kind(&self) -> error::ErrorKind {
+        error::ErrorKind::Comptime
+    }
 }
 
 impl std::error::Error for ScannerError {}

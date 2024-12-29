@@ -24,6 +24,10 @@ impl error::Error for ParserError {
     fn line(&self) -> Option<usize> {
         None
     }
+
+    fn kind(&self) -> error::ErrorKind {
+        error::ErrorKind::Comptime
+    }
 }
 
 impl std::error::Error for ParserError {}
