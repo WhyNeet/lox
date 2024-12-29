@@ -1,7 +1,7 @@
 use std::cmp::PartialOrd;
 use std::ops::{Add, Div, Mul, Neg, Not, Sub};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum RuntimeValue {
     Integer(i64),
     Float(f64),
@@ -204,6 +204,32 @@ impl Div for &RuntimeValue {
                 _ => None,
             },
             _ => None,
+        }
+    }
+}
+
+impl PartialEq for RuntimeValue {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            RuntimeValue::Integer(lhs) => match other {
+                RuntimeValue::Integer(rhs) => lhs == rhs,
+                RuntimeValue::Float(rhs) => *lhs as f64 == *rhs,
+                _ => false,
+            },
+            RuntimeValue::Float(lhs) => match other {
+                RuntimeValue::Integer(rhs) => *lhs == *rhs as f64,
+                RuntimeValue::Float(rhs) => lhs == rhs,
+                _ => false,
+            },
+            RuntimeValue::String(lhs) => match other {
+                RuntimeValue::String(rhs) => lhs == rhs,
+                _ => false,
+            },
+            RuntimeValue::Boolean(lhs) => match other {
+                RuntimeValue::Boolean(rhs) => lhs == rhs,
+                _ => false,
+            },
+            _ => false,
         }
     }
 }

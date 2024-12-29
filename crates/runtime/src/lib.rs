@@ -1,8 +1,6 @@
 pub mod error;
 pub mod runtime;
 
-use std::sync::mpsc::TryIter;
-
 use ::error::InterpreterError;
 use ast::{expression::Expression, literal::Literal, operator::Operator};
 use error::{RuntimeError, RuntimeErrorKind, RuntimeResult};
@@ -30,7 +28,7 @@ impl Runtime {
                 condition,
                 then,
                 alternative,
-            } => todo!(),
+            } => self.conditional(condition, then, alternative),
             Expression::Grouping(expr) => self.grouping(expr),
         }
     }
@@ -117,5 +115,20 @@ impl Runtime {
         .ok_or(InterpreterError::new(RuntimeError::new(
             RuntimeErrorKind::ExpectedNumberOperand,
         )))
+    }
+
+    fn conditional(
+        &self,
+        condition: &Expression,
+        then: &Expression,
+        alternative: &Expression,
+    ) -> RuntimeResult<RuntimeValue> {
+        let condition_result = self.evaluate(condition)?;
+
+        if condition_result == RuntimeValue::boolean(true) {
+            self.evaluate(then)
+        } else {
+            self.evaluate(alternative)
+        }
     }
 }
