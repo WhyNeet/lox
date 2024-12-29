@@ -1,6 +1,7 @@
-expression = equality ;
+expression = ternary ;
 
 (* Based on precedence level (from lowest to highest) *)
+ternary = equality ( "?" equality ":" equality )? ;
 equality = comparison { ( "!=" | "==" ) comparison } ;
 comparison = term { ( ">" | ">=" | "<" | "<=" ) term } ;
 term  = factor { ( "+" | "-" ) factor } ;
