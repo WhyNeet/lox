@@ -13,4 +13,9 @@ pub enum Expression {
     },
     Literal(Literal),
     Grouping(Box<Expression>),
+    Conditional {
+        condition: Box<Expression>,
+        then: Box<Expression>,
+        alternative: Box<Expression>,
+    },
 }
