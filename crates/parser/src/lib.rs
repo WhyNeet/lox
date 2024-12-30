@@ -65,8 +65,26 @@ impl Parser {
     fn statement(&self) -> ParserResult<Statement> {
         if self.match_token(&[TokenType::Print]) {
             self.print_stmt()
+        } else if self.match_token(&[TokenType::LeftBrace]) {
+            self.block()
         } else {
             self.expr_stmt()
+        }
+    }
+
+    fn block(&self) -> ParserResult<Statement> {
+        let mut statements = vec![];
+
+        while !self.is_at_end() && !self.check(&TokenType::RightBrace) {
+            statements.push(self.declaration()?);
+        }
+
+        println!("parsed block inner");
+
+        if !self.match_token(&[TokenType::RightBrace]) {
+            Err(self.construct_error(ParserErrorKind::TokenExpected('}')))
+        } else {
+            Ok(Statement::Block(statements))
         }
     }
 
