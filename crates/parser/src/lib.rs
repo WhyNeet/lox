@@ -3,7 +3,7 @@ pub mod error;
 use std::cell::RefCell;
 
 use ::error::InterpreterError;
-use ast::{expression::Expression, literal::Literal};
+use ast::{expression::Expression, literal::Literal, statement::Statement};
 use error::{ParserError, ParserErrorKind, ParserResult};
 use lexer::token::{token_type::TokenType, Token};
 
@@ -21,8 +21,46 @@ impl Parser {
         }
     }
 
-    pub fn run(&self) -> ParserResult<Expression> {
-        self.expression()
+    pub fn run(&self) -> ParserResult<Vec<Statement>> {
+        self.program()
+    }
+
+    fn program(&self) -> ParserResult<Vec<Statement>> {
+        let mut statements = vec![];
+
+        while !self.is_at_end() {
+            statements.push(self.statement()?);
+        }
+
+        Ok(statements)
+    }
+
+    fn statement(&self) -> ParserResult<Statement> {
+        if self.match_token(&[TokenType::Print]) {
+            self.print_stmt()
+        } else {
+            self.expr_stmt()
+        }
+    }
+
+    fn expr_stmt(&self) -> ParserResult<Statement> {
+        let expression = self.expression()?;
+
+        if self.match_token(&[TokenType::Semicolon]) {
+            Ok(Statement::Expression(expression))
+        } else {
+            Err(self.construct_error(ParserErrorKind::TokenExpected(';')))
+        }
+    }
+
+    fn print_stmt(&self) -> ParserResult<Statement> {
+        let expression = self.expression()?;
+
+        if self.match_token(&[TokenType::Semicolon]) {
+            Ok(Statement::Print(expression))
+        } else {
+            Err(self.construct_error(ParserErrorKind::TokenExpected(';')))
+        }
     }
 
     fn expression(&self) -> ParserResult<Expression> {
