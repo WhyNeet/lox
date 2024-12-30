@@ -91,7 +91,27 @@ impl Parser {
     }
 
     fn expression(&self) -> ParserResult<Expression> {
-        self.ternary()
+        self.assignment()
+    }
+
+    fn assignment(&self) -> ParserResult<Expression> {
+        let expr = self.ternary()?;
+
+        if !self.match_token(&[TokenType::Equal]) {
+            return Ok(expr);
+        }
+
+        let identifier = match expr {
+            Expression::Identifier(identifier) => identifier,
+            _ => return Err(self.construct_error(ParserErrorKind::IdentifierExpected)),
+        };
+
+        let expression = self.expression()?;
+
+        Ok(Expression::Assignment {
+            identifier,
+            expression: Box::new(expression),
+        })
     }
 
     fn ternary(&self) -> ParserResult<Expression> {
