@@ -4,4 +4,8 @@ use crate::expression::Expression;
 pub enum Statement {
     Print(Expression),
     Expression(Expression),
+    VariableDeclaration {
+        identifier: String,
+        expression: Expression,
+    },
 }
