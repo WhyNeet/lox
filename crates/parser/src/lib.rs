@@ -29,10 +29,37 @@ impl Parser {
         let mut statements = vec![];
 
         while !self.is_at_end() {
-            statements.push(self.statement()?);
+            statements.push(self.declaration()?);
         }
 
         Ok(statements)
+    }
+
+    fn declaration(&self) -> ParserResult<Statement> {
+        if !self.match_token(&[TokenType::Var]) {
+            return self.statement();
+        }
+
+        if !self.match_token(&[TokenType::Identifier]) {
+            return Err(self.construct_error(ParserErrorKind::IdentifierExpected));
+        }
+
+        let identifier = self.previous().unwrap().lexeme().to_string();
+
+        if !self.match_token(&[TokenType::Equal]) {
+            return Err(self.construct_error(ParserErrorKind::TokenExpected('=')));
+        }
+
+        let expression = self.expression()?;
+
+        if !self.match_token(&[TokenType::Semicolon]) {
+            return Err(self.construct_error(ParserErrorKind::TokenExpected(';')));
+        }
+
+        Ok(Statement::VariableDeclaration {
+            identifier,
+            expression,
+        })
     }
 
     fn statement(&self) -> ParserResult<Statement> {
@@ -222,6 +249,11 @@ impl Parser {
                     .unwrap(),
             )));
         };
+        if self.match_token(&[TokenType::Identifier]) {
+            return Ok(Expression::Identifier(
+                self.previous().unwrap().lexeme().to_string(),
+            ));
+        }
 
         if self.match_token(&[TokenType::LeftParen]) {
             let expr = self.expression()?;

@@ -13,6 +13,9 @@ pub enum ParserErrorKind {
 
     #[error("Missing the left-hand expression operand.")]
     MissingLeftHandOperand,
+
+    #[error("Expected identifier.")]
+    IdentifierExpected,
 }
 
 #[derive(Debug)]
