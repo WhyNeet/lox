@@ -1,16 +1,22 @@
 pub mod error;
 pub mod runtime;
 
+use std::rc::Rc;
+
 use ::error::InterpreterError;
 use ast::{expression::Expression, literal::Literal, operator::Operator, statement::Statement};
 use error::{RuntimeError, RuntimeErrorKind, RuntimeResult};
-use runtime::value::RuntimeValue;
+use runtime::{environment::Environment, value::RuntimeValue};
 
-pub struct Runtime {}
+pub struct Runtime {
+    environment: Environment,
+}
 
 impl Runtime {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            environment: Environment::new(),
+        }
     }
 }
 
@@ -20,8 +26,20 @@ impl Runtime {
             match stmt {
                 Statement::Expression(expr) => self.expr_stmt(&expr),
                 Statement::Print(expr) => self.print_stmt(&expr),
+                Statement::VariableDeclaration {
+                    identifier,
+                    expression,
+                } => self.var_stmt(identifier, &expression),
             }?;
         }
+
+        Ok(())
+    }
+
+    fn var_stmt(&self, identifier: String, expr: &Expression) -> RuntimeResult<()> {
+        let value = self.evaluate(expr)?;
+
+        self.environment.define(identifier, value)?;
 
         Ok(())
     }
@@ -40,7 +58,7 @@ impl Runtime {
         Ok(())
     }
 
-    fn evaluate(&self, expr: &Expression) -> RuntimeResult<RuntimeValue> {
+    fn evaluate(&self, expr: &Expression) -> RuntimeResult<Rc<RuntimeValue>> {
         match expr {
             Expression::Binary {
                 left,
@@ -55,11 +73,18 @@ impl Runtime {
                 alternative,
             } => self.conditional(condition, then, alternative),
             Expression::Grouping(expr) => self.grouping(expr),
+            Expression::Identifier(identifier) => {
+                self.environment
+                    .get(identifier)
+                    .ok_or(InterpreterError::new(RuntimeError::new(
+                        RuntimeErrorKind::VariableNotDefined(identifier.to_string()),
+                    )))
+            }
         }
     }
 
-    fn literal(&self, literal: &Literal) -> RuntimeResult<RuntimeValue> {
-        Ok(match literal {
+    fn literal(&self, literal: &Literal) -> RuntimeResult<Rc<RuntimeValue>> {
+        Ok(Rc::new(match literal {
             Literal::Boolean(value) => RuntimeValue::Boolean(*value),
             Literal::String(value) => RuntimeValue::String(value.clone()),
             Literal::Number(value) => {
@@ -70,20 +95,20 @@ impl Runtime {
                 }
             }
             Literal::Nil => RuntimeValue::Nil,
-        })
+        }))
     }
 
-    fn grouping(&self, expr: &Expression) -> RuntimeResult<RuntimeValue> {
+    fn grouping(&self, expr: &Expression) -> RuntimeResult<Rc<RuntimeValue>> {
         self.evaluate(expr)
     }
 
-    fn unary(&self, operator: &Operator, expr: &Expression) -> RuntimeResult<RuntimeValue> {
+    fn unary(&self, operator: &Operator, expr: &Expression) -> RuntimeResult<Rc<RuntimeValue>> {
         let right = self.evaluate(&expr)?;
 
         match operator {
-            Operator::Subtraction => -&right,
+            Operator::Subtraction => (-&*right).map(Rc::new),
             Operator::Addition => Some(right),
-            Operator::Negation => !&right,
+            Operator::Negation => (!&*right).map(Rc::new),
             _ => None,
         }
         .ok_or(InterpreterError::new(RuntimeError::new(
@@ -96,21 +121,21 @@ impl Runtime {
         left: &Expression,
         operator: &Operator,
         right: &Expression,
-    ) -> RuntimeResult<RuntimeValue> {
+    ) -> RuntimeResult<Rc<RuntimeValue>> {
         let left = self.evaluate(&left)?;
         let right = self.evaluate(&right)?;
 
         match operator {
-            Operator::Addition => &left + &right,
-            Operator::Subtraction => &left - &right,
-            Operator::Multiplication => &left * &right,
+            Operator::Addition => &*left + &*right,
+            Operator::Subtraction => &*left - &*right,
+            Operator::Multiplication => &*left * &*right,
             Operator::Division => {
-                if right == RuntimeValue::integer(0) || right == RuntimeValue::float(0.) {
+                if *right == RuntimeValue::integer(0) || *right == RuntimeValue::float(0.) {
                     return Err(InterpreterError::new(RuntimeError::new(
                         RuntimeErrorKind::ZeroDivision,
                     )));
                 } else {
-                    &left / &right
+                    &*left / &*right
                 }
             }
             Operator::Greater => Some(RuntimeValue::boolean(
@@ -145,6 +170,7 @@ impl Runtime {
             )),
             _ => unreachable!(),
         }
+        .map(Rc::new)
         .ok_or(InterpreterError::new(RuntimeError::new(
             RuntimeErrorKind::ExpectedNumberOperand,
         )))
@@ -155,10 +181,10 @@ impl Runtime {
         condition: &Expression,
         then: &Expression,
         alternative: &Expression,
-    ) -> RuntimeResult<RuntimeValue> {
+    ) -> RuntimeResult<Rc<RuntimeValue>> {
         let condition_result = self.evaluate(condition)?;
 
-        if condition_result == RuntimeValue::boolean(true) {
+        if *condition_result == RuntimeValue::boolean(true) {
             self.evaluate(then)
         } else {
             self.evaluate(alternative)

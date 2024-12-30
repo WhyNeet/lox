@@ -10,6 +10,12 @@ pub enum RuntimeErrorKind {
 
     #[error("Attempted to divide by zero.")]
     ZeroDivision,
+
+    #[error("Variable with identifier `{0}` is already defined.")]
+    VariableAlreadyDefined(String),
+
+    #[error("Variable with identifier `{0}` is not defined.")]
+    VariableNotDefined(String),
 }
 
 #[derive(Debug)]
