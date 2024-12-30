@@ -31,4 +31,15 @@ impl Environment {
         let values = self.values.borrow();
         values.get(identifier).map(Rc::clone)
     }
+
+    pub fn assign(&self, identifier: String, value: Rc<RuntimeValue>) -> RuntimeResult<()> {
+        if !self.values.borrow().contains_key(&identifier) {
+            Err(InterpreterError::new(RuntimeError::new(
+                RuntimeErrorKind::VariableNotDefined(identifier),
+            )))
+        } else {
+            self.values.borrow_mut().insert(identifier, value);
+            Ok(())
+        }
+    }
 }

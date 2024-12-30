@@ -80,6 +80,13 @@ impl Runtime {
                         RuntimeErrorKind::VariableNotDefined(identifier.to_string()),
                     )))
             }
+            Expression::Assignment {
+                identifier,
+                expression,
+            } => self
+                .environment
+                .assign(identifier.to_string(), self.evaluate(&expression)?)
+                .map(|_| Rc::new(RuntimeValue::nil())),
         }
     }
 
