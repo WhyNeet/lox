@@ -1,4 +1,8 @@
-program = statement* EOF ;
+program = declaration* EOF ;
+
+declaration = varDecl | statement ;
+
+varDecl = "var" IDENTIFIER "=" expression ";" ;
 
 statement = exprStmt | printStmt ;
 
