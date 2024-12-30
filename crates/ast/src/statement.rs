@@ -8,4 +8,5 @@ pub enum Statement {
         identifier: String,
         expression: Expression,
     },
+    Block(Vec<Statement>),
 }
