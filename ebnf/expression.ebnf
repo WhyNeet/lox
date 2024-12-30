@@ -1,4 +1,6 @@
-expression = ternary ;
+expression = assignment ;
+
+assignment = IDENTIFIER "=" ternary | ternary ;
 
 (* Based on precedence level (from lowest to highest) *)
 ternary = equality ( "?" equality ":" equality )? ;
