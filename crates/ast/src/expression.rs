@@ -19,4 +19,8 @@ pub enum Expression {
         alternative: Box<Expression>,
     },
     Identifier(String),
+    Assignment {
+        identifier: String,
+        expression: Box<Expression>,
+    },
 }
