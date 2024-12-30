@@ -1,4 +1,5 @@
 use std::cmp::PartialOrd;
+use std::fmt;
 use std::ops::{Add, Div, Mul, Neg, Not, Sub};
 
 #[derive(Debug)]
@@ -262,6 +263,18 @@ impl PartialOrd for RuntimeValue {
                 _ => None,
             },
             _ => None,
+        }
+    }
+}
+
+impl fmt::Display for RuntimeValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RuntimeValue::Integer(value) => write!(f, "{value}"),
+            RuntimeValue::Float(value) => write!(f, "{value}"),
+            RuntimeValue::Boolean(value) => write!(f, "{value}"),
+            RuntimeValue::String(value) => write!(f, "{value}"),
+            RuntimeValue::Nil => write!(f, "nil"),
         }
     }
 }

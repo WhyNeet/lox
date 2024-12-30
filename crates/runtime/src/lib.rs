@@ -29,7 +29,7 @@ impl Runtime {
     fn print_stmt(&self, expr: &Expression) -> RuntimeResult<()> {
         let value = self.evaluate(expr)?;
 
-        println!("{value:?}");
+        println!("{value}");
 
         Ok(())
     }
