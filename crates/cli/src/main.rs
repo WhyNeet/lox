@@ -23,10 +23,8 @@ fn main() {
 
     println!("\n--- running ---\n");
 
-    let result = Runtime::new().evaluate(&tree).unwrap_or_else(|err| {
+    Runtime::new().run(tree).unwrap_or_else(|err| {
         eprintln!("{err}");
         process::exit(1);
     });
-
-    println!("\n--- result ---\n\n{result:?}");
 }
