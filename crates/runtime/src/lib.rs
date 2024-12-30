@@ -2,7 +2,7 @@ pub mod error;
 pub mod runtime;
 
 use ::error::InterpreterError;
-use ast::{expression::Expression, literal::Literal, operator::Operator};
+use ast::{expression::Expression, literal::Literal, operator::Operator, statement::Statement};
 use error::{RuntimeError, RuntimeErrorKind, RuntimeResult};
 use runtime::value::RuntimeValue;
 
@@ -15,7 +15,32 @@ impl Runtime {
 }
 
 impl Runtime {
-    pub fn evaluate(&self, expr: &Expression) -> RuntimeResult<RuntimeValue> {
+    pub fn run(&self, program: Vec<Statement>) -> RuntimeResult<()> {
+        for stmt in program {
+            match stmt {
+                Statement::Expression(expr) => self.expr_stmt(&expr),
+                Statement::Print(expr) => self.print_stmt(&expr),
+            }?;
+        }
+
+        Ok(())
+    }
+
+    fn print_stmt(&self, expr: &Expression) -> RuntimeResult<()> {
+        let value = self.evaluate(expr)?;
+
+        println!("{value:?}");
+
+        Ok(())
+    }
+
+    fn expr_stmt(&self, expr: &Expression) -> RuntimeResult<()> {
+        self.evaluate(expr)?;
+
+        Ok(())
+    }
+
+    fn evaluate(&self, expr: &Expression) -> RuntimeResult<RuntimeValue> {
         match expr {
             Expression::Binary {
                 left,
@@ -105,7 +130,7 @@ impl Runtime {
             )),
             Operator::LessOrEqual => Some(RuntimeValue::boolean(
                 left.partial_cmp(&right)
-                    .map(|ord| ord.is_ge())
+                    .map(|ord| ord.is_le())
                     .unwrap_or(false),
             )),
             Operator::Equal => Some(RuntimeValue::boolean(
