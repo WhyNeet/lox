@@ -9,11 +9,19 @@ use super::value::RuntimeValue;
 #[derive(Default)]
 pub struct Environment {
     values: RefCell<HashMap<String, Rc<RuntimeValue>>>,
+    enclosing: Option<Box<Environment>>,
 }
 
 impl Environment {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_enclosing(enclosing: Box<Environment>) -> Self {
+        Self {
+            enclosing: Some(enclosing),
+            ..Default::default()
+        }
     }
 
     pub fn define(&self, identifier: String, value: Rc<RuntimeValue>) -> RuntimeResult<()> {
@@ -29,14 +37,24 @@ impl Environment {
 
     pub fn get(&self, identifier: &str) -> Option<Rc<RuntimeValue>> {
         let values = self.values.borrow();
-        values.get(identifier).map(Rc::clone)
+        let value = values.get(identifier).map(Rc::clone);
+
+        if value.is_none() && self.enclosing.is_some() {
+            self.enclosing.as_ref().unwrap().get(identifier)
+        } else {
+            value
+        }
     }
 
     pub fn assign(&self, identifier: String, value: Rc<RuntimeValue>) -> RuntimeResult<()> {
         if !self.values.borrow().contains_key(&identifier) {
-            Err(InterpreterError::new(RuntimeError::new(
-                RuntimeErrorKind::VariableNotDefined(identifier),
-            )))
+            if self.enclosing.is_some() {
+                self.enclosing.as_ref().unwrap().assign(identifier, value)
+            } else {
+                Err(InterpreterError::new(RuntimeError::new(
+                    RuntimeErrorKind::VariableNotDefined(identifier),
+                )))
+            }
         } else {
             self.values.borrow_mut().insert(identifier, value);
             Ok(())
