@@ -1,11 +1,23 @@
-use std::{env, process};
+pub mod args;
 
+use std::{fs, process};
+
+use args::Args;
+use clap::Parser as _;
 use lexer::scanner::Scanner;
 use parser::Parser;
 use runtime::Runtime;
 
 fn main() {
-    let input = env::args().nth(1).unwrap();
+    let args = Args::parse();
+
+    let input = args
+        .file
+        .get(0)
+        .map(|path| fs::read_to_string(path).unwrap())
+        .unwrap_or_else(|| match args.command.unwrap() {
+            args::Commands::Eval { code } => code,
+        });
 
     let scanner = Scanner::new(input);
     scanner.scan_tokens().unwrap_or_else(|err| {
@@ -20,8 +32,6 @@ fn main() {
         eprintln!("{err}");
         process::exit(1)
     });
-
-    println!("\n--- running ---\n");
 
     Runtime::new().run(tree).unwrap_or_else(|err| {
         eprintln!("{err}");
