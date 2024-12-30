@@ -1,7 +1,7 @@
 pub mod error;
 pub mod runtime;
 
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use ::error::InterpreterError;
 use ast::{expression::Expression, literal::Literal, operator::Operator, statement::Statement};
@@ -9,14 +9,18 @@ use error::{RuntimeError, RuntimeErrorKind, RuntimeResult};
 use runtime::{environment::Environment, value::RuntimeValue};
 
 pub struct Runtime {
-    environment: Environment,
+    environment: RefCell<Option<Rc<Environment>>>,
 }
 
 impl Runtime {
     pub fn new() -> Self {
         Self {
-            environment: Environment::new(),
+            environment: RefCell::new(Some(Rc::new(Environment::new()))),
         }
+    }
+
+    fn environment(&self) -> Rc<Environment> {
+        self.environment.borrow().as_ref().map(Rc::clone).unwrap()
     }
 }
 
@@ -30,8 +34,23 @@ impl Runtime {
                     identifier,
                     expression,
                 } => self.var_stmt(identifier, &expression),
+                Statement::Block(statements) => self.block(statements),
             }?;
         }
+
+        Ok(())
+    }
+
+    fn block(&self, statements: Vec<Statement>) -> RuntimeResult<()> {
+        let prev_environment = self.environment.take().unwrap();
+
+        *self.environment.borrow_mut() = Some(Rc::new(Environment::with_enclosing(Rc::clone(
+            &prev_environment,
+        ))));
+
+        self.run(statements)?;
+
+        *self.environment.borrow_mut() = Some(prev_environment);
 
         Ok(())
     }
@@ -39,7 +58,7 @@ impl Runtime {
     fn var_stmt(&self, identifier: String, expr: &Expression) -> RuntimeResult<()> {
         let value = self.evaluate(expr)?;
 
-        self.environment.define(identifier, value)?;
+        self.environment().define(identifier, value)?;
 
         Ok(())
     }
@@ -74,7 +93,7 @@ impl Runtime {
             } => self.conditional(condition, then, alternative),
             Expression::Grouping(expr) => self.grouping(expr),
             Expression::Identifier(identifier) => {
-                self.environment
+                self.environment()
                     .get(identifier)
                     .ok_or(InterpreterError::new(RuntimeError::new(
                         RuntimeErrorKind::VariableNotDefined(identifier.to_string()),
@@ -84,7 +103,7 @@ impl Runtime {
                 identifier,
                 expression,
             } => self
-                .environment
+                .environment()
                 .assign(identifier.to_string(), self.evaluate(&expression)?)
                 .map(|_| Rc::new(RuntimeValue::nil())),
         }

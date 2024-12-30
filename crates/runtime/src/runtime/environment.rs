@@ -9,7 +9,7 @@ use super::value::RuntimeValue;
 #[derive(Default)]
 pub struct Environment {
     values: RefCell<HashMap<String, Rc<RuntimeValue>>>,
-    enclosing: Option<Box<Environment>>,
+    enclosing: Option<Rc<Environment>>,
 }
 
 impl Environment {
@@ -17,7 +17,7 @@ impl Environment {
         Self::default()
     }
 
-    pub fn with_enclosing(enclosing: Box<Environment>) -> Self {
+    pub fn with_enclosing(enclosing: Rc<Environment>) -> Self {
         Self {
             enclosing: Some(enclosing),
             ..Default::default()
