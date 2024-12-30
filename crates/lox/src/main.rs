@@ -1,9 +1,12 @@
 pub mod args;
+pub mod error;
 
 use std::{fs, process};
 
 use args::Args;
 use clap::Parser as _;
+use colored::Colorize;
+use error::CliError;
 use lexer::scanner::Scanner;
 use parser::Parser;
 use runtime::Runtime;
@@ -15,8 +18,13 @@ fn main() {
         .file
         .get(0)
         .map(|path| fs::read_to_string(path).unwrap())
-        .unwrap_or_else(|| match args.command.unwrap() {
-            args::Commands::Eval { code } => code,
+        .unwrap_or_else(|| {
+            match args.command.unwrap_or_else(|| {
+                eprintln!("{}", CliError::MissingFilename.to_string().red());
+                process::exit(1);
+            }) {
+                args::Commands::Eval { code } => code,
+            }
         });
 
     let scanner = Scanner::new(input);
