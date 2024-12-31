@@ -4,7 +4,10 @@ declaration = varDecl | statement ;
 
 varDecl = "var" IDENTIFIER "=" expression ";" ;
 
-statement = exprStmt | printStmt | block | ifStmt | whileStmt ;
+statement = exprStmt | printStmt | block | ifStmt | whileStmt | breakStmt | continueStmt ;
+
+breakStmt = "break" ";" ;
+continueStmt = "continue" ";" ;
 
 whileStmt = "while" expression block ;
 
