@@ -67,9 +67,39 @@ impl Parser {
             self.print_stmt()
         } else if self.match_token(&[TokenType::LeftBrace]) {
             self.block()
+        } else if self.match_token(&[TokenType::If]) {
+            self.if_stmt()
         } else {
             self.expr_stmt()
         }
+    }
+
+    fn if_stmt(&self) -> ParserResult<Statement> {
+        let condition = self.expression()?;
+        if !self.match_token(&[TokenType::LeftBrace]) {
+            return Err(self.construct_error(ParserErrorKind::TokenExpected('{')));
+        }
+        let then = self.block()?;
+
+        let alternative = if self.match_token(&[TokenType::Else]) {
+            if !self.check(&TokenType::If) {
+                if !self.match_token(&[TokenType::LeftBrace]) {
+                    return Err(self.construct_error(ParserErrorKind::TokenExpected('{')));
+                }
+
+                Some(self.block()?)
+            } else {
+                Some(self.statement()?)
+            }
+        } else {
+            None
+        };
+
+        Ok(Statement::Conditional {
+            condition,
+            then: Box::new(then),
+            alternative: alternative.map(Box::new),
+        })
     }
 
     fn block(&self) -> ParserResult<Statement> {
@@ -78,8 +108,6 @@ impl Parser {
         while !self.is_at_end() && !self.check(&TokenType::RightBrace) {
             statements.push(self.declaration()?);
         }
-
-        println!("parsed block inner");
 
         if !self.match_token(&[TokenType::RightBrace]) {
             Err(self.construct_error(ParserErrorKind::TokenExpected('}')))
