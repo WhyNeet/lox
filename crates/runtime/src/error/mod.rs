@@ -16,6 +16,12 @@ pub enum RuntimeErrorKind {
 
     #[error("Variable with identifier `{0}` is not defined.")]
     VariableNotDefined(String),
+
+    #[error("`continue` statement used outside of a loop.")]
+    ContinueNotWithinLoop,
+
+    #[error("`break` statement used outside of a loop.")]
+    BreakNotWithinLoop,
 }
 
 #[derive(Debug)]

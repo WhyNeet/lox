@@ -6,7 +6,7 @@ use std::{cell::RefCell, rc::Rc};
 use ::error::InterpreterError;
 use ast::{expression::Expression, literal::Literal, operator::Operator, statement::Statement};
 use error::{RuntimeError, RuntimeErrorKind, RuntimeResult};
-use runtime::{environment::Environment, value::RuntimeValue};
+use runtime::{environment::Environment, signal::RuntimeSignal, value::RuntimeValue};
 
 pub struct Runtime {
     environment: RefCell<Option<Rc<Environment>>>,
@@ -26,21 +26,36 @@ impl Runtime {
 
 impl Runtime {
     pub fn run(&self, program: &Vec<Statement>) -> RuntimeResult<()> {
-        for stmt in program {
-            self.statement(stmt)?;
+        if let Some(signal) = self._run(program)? {
+            Err(InterpreterError::new(RuntimeError::new(match signal {
+                RuntimeSignal::LoopBreak => RuntimeErrorKind::BreakNotWithinLoop,
+                RuntimeSignal::LoopContinue => RuntimeErrorKind::ContinueNotWithinLoop,
+            })))
+        } else {
+            Ok(())
         }
-
-        Ok(())
     }
 
-    fn statement(&self, stmt: &Statement) -> RuntimeResult<()> {
+    fn _run(&self, program: &Vec<Statement>) -> RuntimeResult<Option<RuntimeSignal>> {
+        for stmt in program {
+            if let Some(signal) = self.statement(stmt)? {
+                return Ok(Some(signal));
+            }
+        }
+
+        Ok(None)
+    }
+
+    fn statement(&self, stmt: &Statement) -> RuntimeResult<Option<RuntimeSignal>> {
         match stmt {
-            Statement::Expression(expr) => self.expr_stmt(&expr),
-            Statement::Print(expr) => self.print_stmt(&expr),
+            Statement::Expression(expr) => self.expr_stmt(&expr).map(|_| None),
+            Statement::Print(expr) => self.print_stmt(&expr).map(|_| None),
             Statement::VariableDeclaration {
                 identifier,
                 expression,
-            } => self.var_stmt(identifier.to_string(), &expression),
+            } => self
+                .var_stmt(identifier.to_string(), &expression)
+                .map(|_| None),
             Statement::Block(statements) => self.block(statements),
             Statement::Conditional {
                 condition,
@@ -48,15 +63,26 @@ impl Runtime {
                 alternative,
             } => self.conditional_stmt(condition, then, alternative.as_ref()),
             Statement::While { condition, block } => self.loop_stmt(condition, block),
+            Statement::Break => Ok(Some(RuntimeSignal::LoopBreak)),
+            Statement::Continue => Ok(Some(RuntimeSignal::LoopContinue)),
         }
     }
 
-    fn loop_stmt(&self, condition: &Expression, block: &Statement) -> RuntimeResult<()> {
+    fn loop_stmt(
+        &self,
+        condition: &Expression,
+        block: &Statement,
+    ) -> RuntimeResult<Option<RuntimeSignal>> {
         while self.evaluate(condition)?.as_ref().into() {
-            self.statement(block)?;
+            if let Some(signal) = self.statement(block)? {
+                match signal {
+                    RuntimeSignal::LoopBreak => break,
+                    RuntimeSignal::LoopContinue => continue,
+                }
+            }
         }
 
-        Ok(())
+        Ok(None)
     }
 
     fn conditional_stmt(
@@ -64,31 +90,33 @@ impl Runtime {
         condition: &Expression,
         then: &Statement,
         alternative: Option<&Box<Statement>>,
-    ) -> RuntimeResult<()> {
+    ) -> RuntimeResult<Option<RuntimeSignal>> {
         let condition_result = self.evaluate(&condition)?;
 
         // if negated runtime value is false
-        if !<_ as TryInto<bool>>::try_into(&(!&*condition_result).unwrap()).unwrap() {
-            self.statement(then)?;
+        let signal = if !<_ as TryInto<bool>>::try_into(&(!&*condition_result).unwrap()).unwrap() {
+            self.statement(then)?
         } else if let Some(alternative) = alternative {
-            self.statement(alternative)?;
-        }
+            self.statement(alternative)?
+        } else {
+            None
+        };
 
-        Ok(())
+        Ok(signal)
     }
 
-    fn block(&self, statements: &Vec<Statement>) -> RuntimeResult<()> {
+    fn block(&self, statements: &Vec<Statement>) -> RuntimeResult<Option<RuntimeSignal>> {
         let prev_environment = self.environment.take().unwrap();
 
         *self.environment.borrow_mut() = Some(Rc::new(Environment::with_enclosing(Rc::clone(
             &prev_environment,
         ))));
 
-        self.run(statements)?;
+        let signal = self._run(statements)?;
 
         *self.environment.borrow_mut() = Some(prev_environment);
 
-        Ok(())
+        Ok(signal)
     }
 
     fn var_stmt(&self, identifier: String, expr: &Expression) -> RuntimeResult<()> {
