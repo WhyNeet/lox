@@ -21,6 +21,8 @@ pub static KEYWORDS: LazyLock<HashMap<String, TokenType>> = LazyLock::new(|| {
     map.insert("this".to_string(), TokenType::This);
     map.insert("true".to_string(), TokenType::True);
     map.insert("var".to_string(), TokenType::Var);
+    map.insert("break".to_string(), TokenType::Break);
+    map.insert("continue".to_string(), TokenType::Continue);
 
     map
 });

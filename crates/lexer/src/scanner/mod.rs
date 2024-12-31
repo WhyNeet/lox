@@ -78,7 +78,6 @@ impl Scanner {
             } else {
                 TokenType::Less
             }),
-
             '/' => {
                 if self.match_char('/') {
                     // Skip comment
