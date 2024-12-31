@@ -71,8 +71,28 @@ impl Parser {
             self.if_stmt()
         } else if self.match_token(&[TokenType::While]) {
             self.while_stmt()
+        } else if self.match_token(&[TokenType::Break]) {
+            self.break_stmt()
+        } else if self.match_token(&[TokenType::Continue]) {
+            self.continue_stmt()
         } else {
             self.expr_stmt()
+        }
+    }
+
+    fn break_stmt(&self) -> ParserResult<Statement> {
+        if !self.match_token(&[TokenType::Semicolon]) {
+            Err(self.construct_error(ParserErrorKind::TokenExpected(';')))
+        } else {
+            Ok(Statement::Break)
+        }
+    }
+
+    fn continue_stmt(&self) -> ParserResult<Statement> {
+        if !self.match_token(&[TokenType::Semicolon]) {
+            Err(self.construct_error(ParserErrorKind::TokenExpected(';')))
+        } else {
+            Ok(Statement::Continue)
         }
     }
 
