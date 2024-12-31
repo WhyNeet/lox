@@ -25,23 +25,50 @@ impl Runtime {
 }
 
 impl Runtime {
-    pub fn run(&self, program: Vec<Statement>) -> RuntimeResult<()> {
+    pub fn run(&self, program: &Vec<Statement>) -> RuntimeResult<()> {
         for stmt in program {
-            match stmt {
-                Statement::Expression(expr) => self.expr_stmt(&expr),
-                Statement::Print(expr) => self.print_stmt(&expr),
-                Statement::VariableDeclaration {
-                    identifier,
-                    expression,
-                } => self.var_stmt(identifier, &expression),
-                Statement::Block(statements) => self.block(statements),
-            }?;
+            self.statement(stmt)?;
         }
 
         Ok(())
     }
 
-    fn block(&self, statements: Vec<Statement>) -> RuntimeResult<()> {
+    fn statement(&self, stmt: &Statement) -> RuntimeResult<()> {
+        match stmt {
+            Statement::Expression(expr) => self.expr_stmt(&expr),
+            Statement::Print(expr) => self.print_stmt(&expr),
+            Statement::VariableDeclaration {
+                identifier,
+                expression,
+            } => self.var_stmt(identifier.to_string(), &expression),
+            Statement::Block(statements) => self.block(statements),
+            Statement::Conditional {
+                condition,
+                then,
+                alternative,
+            } => self.conditional_stmt(condition, then, alternative.as_ref()),
+        }
+    }
+
+    fn conditional_stmt(
+        &self,
+        condition: &Expression,
+        then: &Statement,
+        alternative: Option<&Box<Statement>>,
+    ) -> RuntimeResult<()> {
+        let condition_result = self.evaluate(&condition)?;
+
+        // if negated runtime value is false
+        if !<_ as TryInto<bool>>::try_into(&(!&*condition_result).unwrap()).unwrap() {
+            self.statement(then)?;
+        } else if let Some(alternative) = alternative {
+            self.statement(alternative)?;
+        }
+
+        Ok(())
+    }
+
+    fn block(&self, statements: &Vec<Statement>) -> RuntimeResult<()> {
         let prev_environment = self.environment.take().unwrap();
 
         *self.environment.borrow_mut() = Some(Rc::new(Environment::with_enclosing(Rc::clone(

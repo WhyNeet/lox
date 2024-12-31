@@ -106,9 +106,9 @@ impl Not for &RuntimeValue {
         } else if let Ok(value) = <_ as TryInto<bool>>::try_into(self) {
             Some(RuntimeValue::boolean(!value))
         } else if let Ok(_) = <_ as TryInto<&str>>::try_into(self) {
-            Some(RuntimeValue::boolean(true))
-        } else if let Ok(_) = <_ as TryInto<()>>::try_into(self) {
             Some(RuntimeValue::boolean(false))
+        } else if let Ok(_) = <_ as TryInto<()>>::try_into(self) {
+            Some(RuntimeValue::boolean(true))
         } else {
             None
         }
