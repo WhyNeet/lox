@@ -221,6 +221,12 @@ impl Runtime {
                     .map(|ord| ord.is_ne())
                     .unwrap_or(false),
             )),
+            Operator::Conjunction => {
+                Some(RuntimeValue::boolean((&*left).into() && (&*right).into()))
+            }
+            Operator::Disjunction => {
+                Some(RuntimeValue::boolean((&*left).into() || (&*right).into()))
+            }
             _ => unreachable!(),
         }
         .map(Rc::new)

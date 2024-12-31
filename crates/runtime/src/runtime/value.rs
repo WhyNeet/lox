@@ -73,13 +73,14 @@ impl<'a> TryInto<&'a str> for &'a RuntimeValue {
     }
 }
 
-impl TryInto<bool> for &RuntimeValue {
-    type Error = String;
-
-    fn try_into(self) -> Result<bool, Self::Error> {
+impl Into<bool> for &RuntimeValue {
+    fn into(self) -> bool {
         match self {
-            RuntimeValue::Boolean(value) => Ok(*value),
-            _ => Err("runtime value is not a Boolean".to_string()),
+            RuntimeValue::Boolean(value) => *value,
+            RuntimeValue::Float(value) => *value != 0.,
+            RuntimeValue::Integer(value) => *value != 0,
+            RuntimeValue::String(_) => true,
+            RuntimeValue::Nil => false,
         }
     }
 }
@@ -99,19 +100,7 @@ impl Not for &RuntimeValue {
     type Output = Option<RuntimeValue>;
 
     fn not(self) -> Self::Output {
-        if let Ok(value) = <_ as TryInto<i64>>::try_into(self) {
-            Some(RuntimeValue::boolean(!(value != 0)))
-        } else if let Ok(value) = <_ as TryInto<f64>>::try_into(self) {
-            Some(RuntimeValue::boolean(!(value != 0.)))
-        } else if let Ok(value) = <_ as TryInto<bool>>::try_into(self) {
-            Some(RuntimeValue::boolean(!value))
-        } else if let Ok(_) = <_ as TryInto<&str>>::try_into(self) {
-            Some(RuntimeValue::boolean(false))
-        } else if let Ok(_) = <_ as TryInto<()>>::try_into(self) {
-            Some(RuntimeValue::boolean(true))
-        } else {
-            None
-        }
+        Some(RuntimeValue::Boolean(!<_ as Into<bool>>::into(self)))
     }
 }
 
