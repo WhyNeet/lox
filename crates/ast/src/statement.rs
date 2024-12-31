@@ -18,4 +18,6 @@ pub enum Statement {
         condition: Expression,
         block: Box<Statement>,
     },
+    Break,
+    Continue,
 }
