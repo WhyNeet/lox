@@ -4,7 +4,9 @@ declaration = varDecl | statement ;
 
 varDecl = "var" IDENTIFIER "=" expression ";" ;
 
-statement = exprStmt | printStmt | block | ifStmt ;
+statement = exprStmt | printStmt | block | ifStmt | whileStmt ;
+
+whileStmt = "while" expression block ;
 
 ifStmt = "if" expression block
        ( "else" "if" expression block )*
