@@ -2,8 +2,11 @@ expression = assignment ;
 
 assignment = IDENTIFIER "=" ternary | ternary ;
 
-(* Based on precedence level (from lowest to highest) *)
-ternary = equality ( "?" equality ":" equality )? ;
+ternary = logic_or ( "?" logic_or ":" logic_or )? ;
+
+logic_or = logic_and ( "or" logic_and )* ;
+logic_and = equality ( "and" equality )* ;
+
 equality = comparison ( ( "!=" | "==" ) comparison )* ;
 comparison = term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term  = factor ( ( "+" | "-" ) factor )* ;
