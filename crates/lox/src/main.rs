@@ -41,7 +41,7 @@ fn main() {
         process::exit(1)
     });
 
-    Runtime::new().run(tree).unwrap_or_else(|err| {
+    Runtime::new().run(&tree).unwrap_or_else(|err| {
         eprintln!("{err}");
         process::exit(1);
     });
