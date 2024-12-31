@@ -69,9 +69,26 @@ impl Parser {
             self.block()
         } else if self.match_token(&[TokenType::If]) {
             self.if_stmt()
+        } else if self.match_token(&[TokenType::While]) {
+            self.while_stmt()
         } else {
             self.expr_stmt()
         }
+    }
+
+    fn while_stmt(&self) -> ParserResult<Statement> {
+        let condition = self.expression()?;
+
+        if !self.match_token(&[TokenType::LeftBrace]) {
+            return Err(self.construct_error(ParserErrorKind::TokenExpected('{')));
+        }
+
+        let block = self.block()?;
+
+        Ok(Statement::While {
+            condition,
+            block: Box::new(block),
+        })
     }
 
     fn if_stmt(&self) -> ParserResult<Statement> {
