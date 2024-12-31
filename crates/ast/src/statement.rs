@@ -9,4 +9,9 @@ pub enum Statement {
         expression: Expression,
     },
     Block(Vec<Statement>),
+    Conditional {
+        condition: Expression,
+        then: Box<Statement>,
+        alternative: Option<Box<Statement>>,
+    },
 }
