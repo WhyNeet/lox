@@ -161,20 +161,52 @@ impl Parser {
     }
 
     fn ternary(&self) -> ParserResult<Expression> {
-        let mut expr = self.equality()?;
+        let mut expr = self.logic_or()?;
 
         if self.match_token(&[TokenType::Question]) {
-            let then = self.equality()?;
+            let then = self.logic_or()?;
             if !self.match_token(&[TokenType::Colon]) {
                 return Err(self.construct_error(ParserErrorKind::TokenExpected(':')));
             }
 
-            let alternative = self.equality()?;
+            let alternative = self.logic_or()?;
 
             expr = Expression::Conditional {
                 condition: Box::new(expr),
                 then: Box::new(then),
                 alternative: Box::new(alternative),
+            };
+        }
+
+        Ok(expr)
+    }
+
+    fn logic_or(&self) -> ParserResult<Expression> {
+        let mut expr = self.logic_and()?;
+
+        while self.match_token(&[TokenType::Or]) {
+            let operator = self.previous().unwrap().try_into().unwrap();
+            let right = self.logic_and()?;
+            expr = Expression::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(expr)
+    }
+
+    fn logic_and(&self) -> ParserResult<Expression> {
+        let mut expr = self.equality()?;
+
+        while self.match_token(&[TokenType::And]) {
+            let operator = self.previous().unwrap().try_into().unwrap();
+            let right = self.equality()?;
+            expr = Expression::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
             };
         }
 
