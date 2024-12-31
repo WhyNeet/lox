@@ -233,7 +233,10 @@ impl PartialEq for RuntimeValue {
                 RuntimeValue::Boolean(rhs) => lhs == rhs,
                 _ => false,
             },
-            _ => false,
+            RuntimeValue::Nil => match other {
+                RuntimeValue::Nil => true,
+                _ => false,
+            },
         }
     }
 }

@@ -47,7 +47,16 @@ impl Runtime {
                 then,
                 alternative,
             } => self.conditional_stmt(condition, then, alternative.as_ref()),
+            Statement::While { condition, block } => self.loop_stmt(condition, block),
         }
+    }
+
+    fn loop_stmt(&self, condition: &Expression, block: &Statement) -> RuntimeResult<()> {
+        while self.evaluate(condition)?.as_ref().into() {
+            self.statement(block)?;
+        }
+
+        Ok(())
     }
 
     fn conditional_stmt(
