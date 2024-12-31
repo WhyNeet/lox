@@ -1,6 +1,6 @@
 use lexer::token::{token_type::TokenType, Token};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Operator {
     Equal,
     NotEqual,

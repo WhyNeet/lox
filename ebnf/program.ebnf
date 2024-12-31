@@ -7,8 +7,8 @@ varDecl = "var" IDENTIFIER "=" expression ";" ;
 statement = exprStmt | printStmt | block | ifStmt ;
 
 ifStmt = "if" expression block
-                ( "else" "if" expression block )*
-                ( "else" block )? ;
+       ( "else" "if" expression block )*
+       ( "else" block )? ;
 block = "{" declaration* "}" ;
 exprStmt = expression ";" ;
 printStmt = "print" expression ";" ;

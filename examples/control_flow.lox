@@ -8,3 +8,6 @@ if a > b and a != 0 {
 } else {
   print "a = " + a + " b = " + b;
 }
+
+
+print "yes" or "no";

@@ -173,60 +173,66 @@ impl Runtime {
         &self,
         left: &Expression,
         operator: &Operator,
-        right: &Expression,
+        right_ast: &Expression,
     ) -> RuntimeResult<Rc<RuntimeValue>> {
         let left = self.evaluate(&left)?;
-        let right = self.evaluate(&right)?;
+        let right = if *operator != Operator::Conjunction && *operator != Operator::Disjunction {
+            Some(self.evaluate(&right_ast)?)
+        } else {
+            None
+        };
 
         match operator {
-            Operator::Addition => &*left + &*right,
-            Operator::Subtraction => &*left - &*right,
-            Operator::Multiplication => &*left * &*right,
+            Operator::Addition => &*left + &*right.unwrap(),
+            Operator::Subtraction => &*left - &*right.unwrap(),
+            Operator::Multiplication => &*left * &*right.unwrap(),
             Operator::Division => {
-                if *right == RuntimeValue::integer(0) || *right == RuntimeValue::float(0.) {
+                if right.as_ref().unwrap().as_ref() == &RuntimeValue::integer(0)
+                    || right.as_ref().unwrap().as_ref() == &RuntimeValue::float(0.)
+                {
                     return Err(InterpreterError::new(RuntimeError::new(
                         RuntimeErrorKind::ZeroDivision,
                     )));
                 } else {
-                    &*left / &*right
+                    &*left / &*right.unwrap()
                 }
             }
             Operator::Greater => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right)
+                left.partial_cmp(&right.unwrap())
                     .map(|ord| ord.is_gt())
                     .unwrap_or(false),
             )),
             Operator::GreaterOrEqual => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right)
+                left.partial_cmp(&right.unwrap())
                     .map(|ord| ord.is_ge())
                     .unwrap_or(false),
             )),
             Operator::Less => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right)
+                left.partial_cmp(&right.unwrap())
                     .map(|ord| ord.is_lt())
                     .unwrap_or(false),
             )),
             Operator::LessOrEqual => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right)
+                left.partial_cmp(&right.unwrap())
                     .map(|ord| ord.is_le())
                     .unwrap_or(false),
             )),
             Operator::Equal => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right)
+                left.partial_cmp(&right.unwrap())
                     .map(|ord| ord.is_eq())
                     .unwrap_or(false),
             )),
             Operator::NotEqual => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right)
+                left.partial_cmp(&right.unwrap())
                     .map(|ord| ord.is_ne())
                     .unwrap_or(false),
             )),
-            Operator::Conjunction => {
-                Some(RuntimeValue::boolean((&*left).into() && (&*right).into()))
-            }
-            Operator::Disjunction => {
-                Some(RuntimeValue::boolean((&*left).into() || (&*right).into()))
-            }
+            Operator::Conjunction => Some(RuntimeValue::boolean(
+                (&*left).into() && (&*self.evaluate(right_ast)?).into(),
+            )),
+            Operator::Disjunction => Some(RuntimeValue::boolean(
+                (&*left).into() || (&*self.evaluate(right_ast)?).into(),
+            )),
             _ => unreachable!(),
         }
         .map(Rc::new)
