@@ -14,4 +14,8 @@ pub enum Statement {
         then: Box<Statement>,
         alternative: Option<Box<Statement>>,
     },
+    While {
+        condition: Expression,
+        block: Box<Statement>,
+    },
 }
