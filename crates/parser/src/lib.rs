@@ -349,8 +349,37 @@ impl Parser {
                 right: Box::new(right),
             })
         } else {
-            self.primary()
+            self.call()
         }
+    }
+
+    fn call(&self) -> ParserResult<Expression> {
+        let mut expr = self.primary()?;
+
+        while self.match_token(&[TokenType::LeftParen]) {
+            let arguments = self.arguments()?;
+            expr = Expression::FunctionInvokation {
+                callee: Box::new(expr),
+                arguments,
+            };
+
+            if !self.match_token(&[TokenType::RightParen]) {
+                return Err(self.construct_error(ParserErrorKind::TokenExpected(')')));
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn arguments(&self) -> ParserResult<Vec<Expression>> {
+        let mut arguments = vec![];
+
+        while !self.is_at_end() && !self.check(&TokenType::RightParen) {
+            let expr = self.expression()?;
+            arguments.push(expr);
+        }
+
+        Ok(arguments)
     }
 
     fn primary(&self) -> ParserResult<Expression> {
