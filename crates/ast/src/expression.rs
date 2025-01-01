@@ -23,4 +23,8 @@ pub enum Expression {
         identifier: String,
         expression: Box<Expression>,
     },
+    FunctionInvokation {
+        callee: Box<Expression>,
+        arguments: Vec<Expression>,
+    },
 }
