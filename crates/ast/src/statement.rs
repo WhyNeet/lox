@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::expression::Expression;
 
 #[derive(Debug)]
@@ -13,7 +15,7 @@ pub enum Statement {
         parameters: Vec<String>,
         execute: Box<Statement>,
     },
-    Block(Vec<Statement>),
+    Block(Vec<Rc<Statement>>),
     Conditional {
         condition: Expression,
         then: Box<Statement>,

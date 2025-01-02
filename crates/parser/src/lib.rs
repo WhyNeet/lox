@@ -1,6 +1,6 @@
 pub mod error;
 
-use std::cell::RefCell;
+use std::{cell::RefCell, rc::Rc};
 
 use ::error::InterpreterError;
 use ast::{expression::Expression, literal::Literal, statement::Statement};
@@ -21,25 +21,77 @@ impl Parser {
         }
     }
 
-    pub fn run(&self) -> ParserResult<Vec<Statement>> {
+    pub fn run(&self) -> ParserResult<Vec<Rc<Statement>>> {
         self.program()
     }
 
-    fn program(&self) -> ParserResult<Vec<Statement>> {
+    fn program(&self) -> ParserResult<Vec<Rc<Statement>>> {
         let mut statements = vec![];
 
         while !self.is_at_end() {
-            statements.push(self.declaration()?);
+            statements.push(Rc::new(self.declaration()?));
         }
 
         Ok(statements)
     }
 
     fn declaration(&self) -> ParserResult<Statement> {
-        if !self.match_token(&[TokenType::Var]) {
-            return self.statement();
+        if self.match_token(&[TokenType::Var]) {
+            self.var_decl()
+        } else if self.match_token(&[TokenType::Fun]) {
+            self.fun_decl()
+        } else {
+            self.statement()
+        }
+    }
+
+    fn fun_decl(&self) -> ParserResult<Statement> {
+        if !self.match_token(&[TokenType::Identifier]) {
+            return Err(self.construct_error(ParserErrorKind::IdentifierExpected));
         }
 
+        let identifier = self.previous().unwrap().lexeme().to_string();
+
+        if !self.match_token(&[TokenType::LeftParen]) {
+            return Err(self.construct_error(ParserErrorKind::TokenExpected('(')));
+        }
+
+        let parameters = self.parameters()?;
+
+        if !self.match_token(&[TokenType::LeftBrace]) {
+            return Err(self.construct_error(ParserErrorKind::TokenExpected('{')));
+        }
+
+        let execute = self.block()?;
+
+        Ok(Statement::FunctionDeclaration {
+            identifier,
+            parameters,
+            execute: Box::new(execute),
+        })
+    }
+
+    fn parameters(&self) -> ParserResult<Vec<String>> {
+        let mut parameters = vec![];
+
+        while !self.is_at_end() && !self.check(&TokenType::RightParen) {
+            if !self.match_token(&[TokenType::Identifier]) {
+                return Err(self.construct_error(ParserErrorKind::IdentifierExpected));
+            }
+
+            let identifier = self.previous().unwrap().lexeme().to_string();
+
+            parameters.push(identifier);
+        }
+
+        if !self.match_token(&[TokenType::RightParen]) {
+            return Err(self.construct_error(ParserErrorKind::TokenExpected(')')));
+        }
+
+        Ok(parameters)
+    }
+
+    fn var_decl(&self) -> ParserResult<Statement> {
         if !self.match_token(&[TokenType::Identifier]) {
             return Err(self.construct_error(ParserErrorKind::IdentifierExpected));
         }
@@ -143,7 +195,7 @@ impl Parser {
         let mut statements = vec![];
 
         while !self.is_at_end() && !self.check(&TokenType::RightBrace) {
-            statements.push(self.declaration()?);
+            statements.push(Rc::new(self.declaration()?));
         }
 
         if !self.match_token(&[TokenType::RightBrace]) {
