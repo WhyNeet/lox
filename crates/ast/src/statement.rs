@@ -27,4 +27,5 @@ pub enum Statement {
     },
     Break,
     Continue,
+    Return(Expression),
 }
