@@ -127,8 +127,20 @@ impl Parser {
             self.break_stmt()
         } else if self.match_token(&[TokenType::Continue]) {
             self.continue_stmt()
+        } else if self.match_token(&[TokenType::Return]) {
+            self.return_stmt()
         } else {
             self.expr_stmt()
+        }
+    }
+
+    fn return_stmt(&self) -> ParserResult<Statement> {
+        let expression = self.expression()?;
+
+        if !self.match_token(&[TokenType::Semicolon]) {
+            Err(self.construct_error(ParserErrorKind::TokenExpected(';')))
+        } else {
+            Ok(Statement::Return(expression))
         }
     }
 
