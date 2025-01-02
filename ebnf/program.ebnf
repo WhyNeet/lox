@@ -7,7 +7,9 @@ parameters = IDENTIFIER ( "," IDENTIFIER )* ;
 
 varDecl = "var" IDENTIFIER "=" expression ";" ;
 
-statement = exprStmt | printStmt | block | ifStmt | whileStmt | breakStmt | continueStmt ;
+statement = exprStmt | printStmt | block | ifStmt | returnStmt | whileStmt | breakStmt | continueStmt ;
+
+returnStmt = "return" expression ";" ;
 
 breakStmt = "break" ";" ;
 continueStmt = "continue" ";" ;
