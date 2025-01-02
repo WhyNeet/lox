@@ -25,7 +25,7 @@ impl Runtime {
 }
 
 impl Runtime {
-    pub fn run(&self, program: &Vec<Statement>) -> RuntimeResult<()> {
+    pub fn run(&self, program: &Vec<Rc<Statement>>) -> RuntimeResult<()> {
         if let Some(signal) = self._run(program)? {
             Err(InterpreterError::new(RuntimeError::new(match signal {
                 RuntimeSignal::LoopBreak => RuntimeErrorKind::BreakNotWithinLoop,
@@ -36,7 +36,7 @@ impl Runtime {
         }
     }
 
-    fn _run(&self, program: &Vec<Statement>) -> RuntimeResult<Option<RuntimeSignal>> {
+    fn _run(&self, program: &Vec<Rc<Statement>>) -> RuntimeResult<Option<RuntimeSignal>> {
         for stmt in program {
             if let Some(signal) = self.statement(stmt)? {
                 return Ok(Some(signal));
@@ -56,6 +56,11 @@ impl Runtime {
             } => self
                 .var_stmt(identifier.to_string(), &expression)
                 .map(|_| None),
+            Statement::FunctionDeclaration {
+                identifier,
+                parameters,
+                execute,
+            } => self.fun_stmt(identifier.to_string(), parameters.clone(), execute),
             Statement::Block(statements) => self.block(statements),
             Statement::Conditional {
                 condition,
@@ -66,6 +71,25 @@ impl Runtime {
             Statement::Break => Ok(Some(RuntimeSignal::LoopBreak)),
             Statement::Continue => Ok(Some(RuntimeSignal::LoopContinue)),
         }
+    }
+
+    fn fun_stmt(
+        &self,
+        identifier: String,
+        parameters: Vec<String>,
+        execute: &Statement,
+    ) -> RuntimeResult<Option<RuntimeSignal>> {
+        let enclosing = Rc::clone(&self.environment.borrow());
+
+        let execute = match execute {
+            Statement::Block(statements) => statements,
+            _ => unreachable!(),
+        };
+
+        let function = RuntimeValue::callable(parameters, execute.to_vec(), enclosing);
+        self.environment().define(identifier, Rc::new(function))?;
+
+        Ok(None)
     }
 
     fn loop_stmt(
@@ -105,12 +129,12 @@ impl Runtime {
         Ok(signal)
     }
 
-    fn block(&self, statements: &Vec<Statement>) -> RuntimeResult<Option<RuntimeSignal>> {
-        let prev_environment = self
-            .environment
-            .replace(Rc::new(Environment::with_enclosing(Rc::clone(
-                &self.environment.borrow(),
-            ))));
+    fn block(&self, statements: &Vec<Rc<Statement>>) -> RuntimeResult<Option<RuntimeSignal>> {
+        let environment = Rc::new(Environment::with_enclosing(Rc::clone(
+            &self.environment.borrow(),
+        )));
+
+        let prev_environment = self.environment.replace(environment);
 
         let signal = self._run(statements)?;
 
