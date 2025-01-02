@@ -6,7 +6,7 @@ use crate::error::{RuntimeError, RuntimeErrorKind, RuntimeResult};
 
 use super::value::RuntimeValue;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Environment {
     values: RefCell<HashMap<String, Rc<RuntimeValue>>>,
     enclosing: Option<Rc<Environment>>,

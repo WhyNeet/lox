@@ -22,6 +22,12 @@ pub enum RuntimeErrorKind {
 
     #[error("`break` statement used outside of a loop.")]
     BreakNotWithinLoop,
+
+    #[error("Expression is not callable.")]
+    ExpressionNotCallable,
+
+    #[error("Invalid arguments count ({0}, expected {1}).")]
+    InvalidArgumentCount(usize, usize),
 }
 
 #[derive(Debug)]

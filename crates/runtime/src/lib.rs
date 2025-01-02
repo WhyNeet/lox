@@ -9,18 +9,18 @@ use error::{RuntimeError, RuntimeErrorKind, RuntimeResult};
 use runtime::{environment::Environment, signal::RuntimeSignal, value::RuntimeValue};
 
 pub struct Runtime {
-    environment: RefCell<Option<Rc<Environment>>>,
+    environment: RefCell<Rc<Environment>>,
 }
 
 impl Runtime {
     pub fn new() -> Self {
         Self {
-            environment: RefCell::new(Some(Rc::new(Environment::new()))),
+            environment: RefCell::new(Rc::new(Environment::new())),
         }
     }
 
     fn environment(&self) -> Rc<Environment> {
-        self.environment.borrow().as_ref().map(Rc::clone).unwrap()
+        Rc::clone(&self.environment.borrow())
     }
 }
 
@@ -106,15 +106,15 @@ impl Runtime {
     }
 
     fn block(&self, statements: &Vec<Statement>) -> RuntimeResult<Option<RuntimeSignal>> {
-        let prev_environment = self.environment.take().unwrap();
-
-        *self.environment.borrow_mut() = Some(Rc::new(Environment::with_enclosing(Rc::clone(
-            &prev_environment,
-        ))));
+        let prev_environment = self
+            .environment
+            .replace(Rc::new(Environment::with_enclosing(Rc::clone(
+                &self.environment.borrow(),
+            ))));
 
         let signal = self._run(statements)?;
 
-        *self.environment.borrow_mut() = Some(prev_environment);
+        self.environment.replace(prev_environment);
 
         Ok(signal)
     }
@@ -170,6 +170,49 @@ impl Runtime {
                 .environment()
                 .assign(identifier.to_string(), self.evaluate(&expression)?)
                 .map(|_| Rc::new(RuntimeValue::nil())),
+            Expression::FunctionInvokation { callee, arguments } => {
+                self.function_invokation(callee, arguments)
+            }
+        }
+    }
+
+    fn function_invokation(
+        &self,
+        callee: &Expression,
+        arguments: &Vec<Expression>,
+    ) -> RuntimeResult<Rc<RuntimeValue>> {
+        let callee_expr = self.evaluate(callee)?;
+
+        match callee_expr.as_ref() {
+            RuntimeValue::Callable {
+                execute,
+                enclosing,
+                parameters,
+            } => {
+                if arguments.len() != parameters.len() {
+                    return Err(InterpreterError::new(RuntimeError::new(
+                        RuntimeErrorKind::InvalidArgumentCount(arguments.len(), parameters.len()),
+                    )));
+                }
+
+                let environment = Environment::with_enclosing(Rc::clone(enclosing));
+                for (idx, argument) in arguments.iter().enumerate() {
+                    let name = parameters[idx].to_string();
+                    let argument_value = self.evaluate(argument)?;
+                    environment.define(name, argument_value)?;
+                }
+
+                let prev_environment = self.environment.replace(Rc::new(environment));
+
+                self.block(execute)?;
+
+                self.environment.replace(prev_environment);
+
+                Ok(Rc::new(RuntimeValue::Nil))
+            }
+            _ => Err(InterpreterError::new(RuntimeError::new(
+                RuntimeErrorKind::ExpressionNotCallable,
+            ))),
         }
     }
 

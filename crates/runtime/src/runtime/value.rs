@@ -1,6 +1,11 @@
 use std::cmp::PartialOrd;
 use std::fmt;
 use std::ops::{Add, Div, Mul, Neg, Not, Sub};
+use std::rc::Rc;
+
+use ast::statement::Statement;
+
+use super::environment::Environment;
 
 #[derive(Debug)]
 pub enum RuntimeValue {
@@ -9,6 +14,11 @@ pub enum RuntimeValue {
     String(String),
     Nil,
     Boolean(bool),
+    Callable {
+        execute: Vec<Statement>,
+        enclosing: Rc<Environment>,
+        parameters: Vec<String>,
+    },
 }
 
 impl RuntimeValue {
@@ -81,6 +91,7 @@ impl Into<bool> for &RuntimeValue {
             RuntimeValue::Integer(value) => *value != 0,
             RuntimeValue::String(_) => true,
             RuntimeValue::Nil => false,
+            RuntimeValue::Callable { .. } => true,
         }
     }
 }
@@ -237,6 +248,7 @@ impl PartialEq for RuntimeValue {
                 RuntimeValue::Nil => true,
                 _ => false,
             },
+            RuntimeValue::Callable { .. } => false,
         }
     }
 }
@@ -267,6 +279,7 @@ impl fmt::Display for RuntimeValue {
             RuntimeValue::Boolean(value) => write!(f, "{value}"),
             RuntimeValue::String(value) => write!(f, "{value}"),
             RuntimeValue::Nil => write!(f, "nil"),
+            RuntimeValue::Callable { .. } => write!(f, "[callable]"),
         }
     }
 }
