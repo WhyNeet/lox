@@ -8,6 +8,11 @@ pub enum Statement {
         identifier: String,
         expression: Expression,
     },
+    FunctionDeclaration {
+        identifier: String,
+        parameters: Vec<String>,
+        execute: Box<Statement>,
+    },
     Block(Vec<Statement>),
     Conditional {
         condition: Expression,
