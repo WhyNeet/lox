@@ -30,6 +30,7 @@ impl Runtime {
             Err(InterpreterError::new(RuntimeError::new(match signal {
                 RuntimeSignal::LoopBreak => RuntimeErrorKind::BreakNotWithinLoop,
                 RuntimeSignal::LoopContinue => RuntimeErrorKind::ContinueNotWithinLoop,
+                RuntimeSignal::FunctionReturn(_) => RuntimeErrorKind::ReturnNotWithinFunction,
             })))
         } else {
             Ok(())
@@ -70,6 +71,9 @@ impl Runtime {
             Statement::While { condition, block } => self.loop_stmt(condition, block),
             Statement::Break => Ok(Some(RuntimeSignal::LoopBreak)),
             Statement::Continue => Ok(Some(RuntimeSignal::LoopContinue)),
+            Statement::Return(expression) => Ok(Some(RuntimeSignal::FunctionReturn(
+                self.evaluate(expression)?,
+            ))),
         }
     }
 
@@ -102,6 +106,7 @@ impl Runtime {
                 match signal {
                     RuntimeSignal::LoopBreak => break,
                     RuntimeSignal::LoopContinue => continue,
+                    other => return Ok(Some(other)),
                 }
             }
         }
@@ -228,11 +233,29 @@ impl Runtime {
 
                 let prev_environment = self.environment.replace(Rc::new(environment));
 
-                self.block(execute)?;
+                let signal = self.block(execute)?;
 
                 self.environment.replace(prev_environment);
 
-                Ok(Rc::new(RuntimeValue::Nil))
+                let return_value = if let Some(signal) = signal {
+                    match signal {
+                        RuntimeSignal::FunctionReturn(value) => value,
+                        RuntimeSignal::LoopBreak => {
+                            return Err(InterpreterError::new(RuntimeError::new(
+                                RuntimeErrorKind::BreakNotWithinLoop,
+                            )))
+                        }
+                        RuntimeSignal::LoopContinue => {
+                            return Err(InterpreterError::new(RuntimeError::new(
+                                RuntimeErrorKind::ContinueNotWithinLoop,
+                            )))
+                        }
+                    }
+                } else {
+                    Rc::new(RuntimeValue::Nil)
+                };
+
+                Ok(return_value)
             }
             _ => Err(InterpreterError::new(RuntimeError::new(
                 RuntimeErrorKind::ExpressionNotCallable,

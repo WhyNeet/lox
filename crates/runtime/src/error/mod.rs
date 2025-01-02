@@ -28,6 +28,9 @@ pub enum RuntimeErrorKind {
 
     #[error("Invalid arguments count ({0}, expected {1}).")]
     InvalidArgumentCount(usize, usize),
+
+    #[error("`return` statement used outside of a function.")]
+    ReturnNotWithinFunction,
 }
 
 #[derive(Debug)]
