@@ -1,0 +1,25 @@
+fun greet(name) {
+  print "hello " + name + "!";
+}
+
+fun closures(x) {
+  var x1 = x + 2;
+
+  fun closures2(y) {
+    var y1 = y + 3;
+
+    fun closures3(z) {
+      print x1;
+      print y1;
+      print z;
+    }
+
+    closures3("last");
+  }
+
+  closures2("second");
+}
+
+
+closures("first");
+greet("WhyNeet");
