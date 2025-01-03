@@ -1,25 +1,15 @@
-fun greet(name) {
-  print "hello " + name + "!";
-}
+fun greeter(language) {
+  var word = language == "en" ? "Hello" : "I only speak English,";
 
-fun closures(x) {
-  var x1 = x + 2;
-
-  fun closures2(y) {
-    var y1 = y + 3;
-
-    fun closures3(z) {
-      print x1;
-      print y1;
-      print z;
-    }
-
-    closures3("last");
+  fun greet(name) {
+    print word + " " + name + "!";
   }
 
-  closures2("second");
+  return greet;
 }
 
+var english = greeter("en");
+english("WhyNeet");
 
-closures("first");
-greet("WhyNeet");
+var other = greeter("es");
+other("WhyNeet");
