@@ -75,6 +75,10 @@ impl Parser {
         let mut parameters = vec![];
 
         while !self.is_at_end() && !self.check(&TokenType::RightParen) {
+            if !parameters.is_empty() && !self.match_token(&[TokenType::Comma]) {
+                return Err(self.construct_error(ParserErrorKind::TokenExpected(',')));
+            }
+
             if !self.match_token(&[TokenType::Identifier]) {
                 return Err(self.construct_error(ParserErrorKind::IdentifierExpected));
             }
@@ -439,6 +443,10 @@ impl Parser {
         let mut arguments = vec![];
 
         while !self.is_at_end() && !self.check(&TokenType::RightParen) {
+            if !arguments.is_empty() && !self.match_token(&[TokenType::Comma]) {
+                return Err(self.construct_error(ParserErrorKind::TokenExpected(',')));
+            }
+
             let expr = self.expression()?;
             arguments.push(expr);
         }
