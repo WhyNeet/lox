@@ -16,7 +16,7 @@ pub enum RuntimeValue {
     Boolean(bool),
     Callable {
         execute: Vec<Rc<Statement>>,
-        enclosing: Rc<Environment>,
+        closure: Rc<Environment>,
         parameters: Vec<String>,
     },
 }
@@ -40,11 +40,11 @@ impl RuntimeValue {
     pub fn callable(
         parameters: Vec<String>,
         execute: Vec<Rc<Statement>>,
-        enclosing: Rc<Environment>,
+        closure: Rc<Environment>,
     ) -> Self {
         Self::Callable {
             execute,
-            enclosing,
+            closure,
             parameters,
         }
     }

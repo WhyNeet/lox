@@ -83,14 +83,14 @@ impl Runtime {
         parameters: Vec<String>,
         execute: &Statement,
     ) -> RuntimeResult<Option<RuntimeSignal>> {
-        let enclosing = Rc::clone(&self.environment.borrow());
+        let closure = Rc::clone(&self.environment.borrow());
 
         let execute = match execute {
             Statement::Block(statements) => statements,
             _ => unreachable!(),
         };
 
-        let function = RuntimeValue::callable(parameters, execute.to_vec(), enclosing);
+        let function = RuntimeValue::callable(parameters, execute.to_vec(), closure);
         self.environment().define(identifier, Rc::new(function))?;
 
         Ok(None)
@@ -215,7 +215,7 @@ impl Runtime {
         match callee_expr.as_ref() {
             RuntimeValue::Callable {
                 execute,
-                enclosing,
+                closure,
                 parameters,
             } => {
                 if arguments.len() != parameters.len() {
@@ -224,7 +224,7 @@ impl Runtime {
                     )));
                 }
 
-                let environment = Environment::with_enclosing(Rc::clone(enclosing));
+                let environment = Environment::with_enclosing(Rc::clone(closure));
                 for (idx, argument) in arguments.iter().enumerate() {
                     let name = parameters[idx].to_string();
                     let argument_value = self.evaluate(argument)?;
