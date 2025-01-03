@@ -324,36 +324,12 @@ impl Runtime {
                     &*left / &*right.unwrap()
                 }
             }
-            Operator::Greater => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right.unwrap())
-                    .map(|ord| ord.is_gt())
-                    .unwrap_or(false),
-            )),
-            Operator::GreaterOrEqual => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right.unwrap())
-                    .map(|ord| ord.is_ge())
-                    .unwrap_or(false),
-            )),
-            Operator::Less => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right.unwrap())
-                    .map(|ord| ord.is_lt())
-                    .unwrap_or(false),
-            )),
-            Operator::LessOrEqual => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right.unwrap())
-                    .map(|ord| ord.is_le())
-                    .unwrap_or(false),
-            )),
-            Operator::Equal => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right.unwrap())
-                    .map(|ord| ord.is_eq())
-                    .unwrap_or(false),
-            )),
-            Operator::NotEqual => Some(RuntimeValue::boolean(
-                left.partial_cmp(&right.unwrap())
-                    .map(|ord| ord.is_ne())
-                    .unwrap_or(false),
-            )),
+            Operator::Greater => Some(RuntimeValue::boolean(left.gt(&right.unwrap()))),
+            Operator::GreaterOrEqual => Some(RuntimeValue::boolean(left.ge(&right.unwrap()))),
+            Operator::Less => Some(RuntimeValue::boolean(left.lt(&right.unwrap()))),
+            Operator::LessOrEqual => Some(RuntimeValue::boolean(left.le(&right.unwrap()))),
+            Operator::Equal => Some(RuntimeValue::boolean(left.eq(&right.unwrap()))),
+            Operator::NotEqual => Some(RuntimeValue::boolean(left.ne(&right.unwrap()))),
             Operator::Conjunction => Some(RuntimeValue::boolean(
                 (&*left).into() && (&*self.evaluate(right_ast)?).into(),
             )),
